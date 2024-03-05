@@ -1,0 +1,145 @@
+As an example, we used mitochondrial cyt b sequences (373 bp) dataset from 120 Bombus terrestris dalmatinus belonging to 8 different populations (Aksu = 15, Bayatbadem = 15, Demre = 15, Phaselis = 15, Geyikbayir = 15, Kumluca = 15, Termessos = 15, Firm = 15). Populations were grouped according to the regions from where they were collected; the Aksu, Demre and Kumluca populations belong to greenhouse regions, while the Bayatbadem, Phaselis, Geyikbayir and Termessos populations belong to nature areas and the commercial population was obtained from a firm which is located in Antalya. We want to show how to obtain multiple sequence alignments, haplotype networks, heat map and phylogenetic trees from a FASTA format input file using R (4.0.3. version) [10]. For all these analyses and graphics, we benefited from both R packages and short R commands.
+Preparing the dataset
+The file with the .fas extension obtained from the sequencing process was used as the input file. The sample names in the data were tagged with their population name and sample number. Names and numbers were separated by underscores or spaces, for example, “Kumluca_6” or “Bayatbadem 24”. This naming method allows extracting unique names as population names from sample names with the help of a short command. Thus, the name of the population in all the analyses do not need to be entered again.
+Multiple sequence alignment and plotting aligned FASTA format file
+The readDNAStringSet() command supported in Biostrings package (version 2.54.0) was used to read FASTA format file [17]. With msa() function implemented in msa package, all samples were aligned to the same length by ClustalW algorithm and stored as DNAStringSet object [4, 17]. The as.DNAbin() function provided by ape package (version 5.3) was used to store multiple sequence alignments as a DNAbin object [7]. In this stage, the trim.Ends() function implemented in ips package (version 0.0.11) can be used for trimming the sequences [21]. The msaplot() command provided by ggtree package and ggplot2 package was used to demonstrate the aligned sequences with the phylogenetic tree [11]. Geometric layers (geom_tiplab(), scale_color_continuous(), geom_tiplab(), geom_treescale()) belonging to ggplot2 package were used fordetailing the tree [11]. To construct the phylogenetic tree, the dist.dna() function implemented in ape package was used [7]. The pairwise distance of the DNA sequences was computed with K80 model derived by Kimura [22]. The phylogenetic tree was estimated using the nj() function implemented in ape package [7]. The branch lengths of the tree have been colored to represent the genetic distance. As stated in the commands below, "lightskyblue1" was used for the longest branch of the tree and "coral4" was used for the shortest branch. Each of the nucleotides was represented by a different color. A, C, G, and T nucleotides have been colored with "rosybrown", "sienna1", "lightgoldenrod1", and "lightskyblue1", respectively, as stated in the commands below.
+ggt <- ggtree(tree, cex = 0.8, aes(color = branch.length)) +
+ scale_color_continuous(high = ‘lightskyblue1’,low = ‘coral4’) +
+ geom_tiplab(align = TRUE, size = 2) +
+ geom_treescale(y = -5, color = "coral4", fontsize = 4)
+msaplot(ggt, nbin, offset = 0.009, width = 1, height = 0.5,
+  color = c(rep("rosybrown", 1), rep("sienna1", 1),
+  rep("lightgoldenrod1", 1), rep("lightskyblue1", 1)))
+Extraction of haplotypes
+We wrote dynamic short R commands to find out information about haplotypes and sequence variations. Firstly, we converted the DNAbin object to the DNA matrix (120x373) using the as.matrix() command provided by R base package [10]. Secondly, by comparing the sequences, we extracted the haplotype number, haplotype frequency and variable regions. Thirdly, we identified unique haplo type sequences by ignoring common nucleotides between haplotypes and by printing variable regions.
+The number of haplotypes per population was calculated using haplotypes package and short R commands [3]. Firstly, DNAbin object was converted to an object of class "DNA" using the as.dna() command which is provided by haplotypes package. Then haplotypes were extracted and grouped using the haplotype() and grouping() commands, respectively [3]. Finally, the population frequency matrix was extracted.
+Haplotype distance matrix and heat map
+Distance between the haplotypes was calculated by using dist.hamming() function from pegas package [2]. The Hamming distance method is a calculation of the pairwise distance matrix for the corresponding symbols between two strings of equal length [23]. Our data set consisted of haplotype sequences with 41 base pair long strings. We first separated each string into nucleotide arrays with strsplit() function, and formed a (20x41) haplotype sequences matrix, and then called dist.hamming() function for computing Hamming distance matrix.
+For the construction of a heat map, we extracted the symmetric distance matrix (20x20) from the haplotype sequences matrix (20x41) using simple R commands. For this calculation, we compared the haplotype sequences in pairs, counting the nucleotide differences between them and writing them on a symmetric matrix. Then, we used this matrix for the visualization of heat map with the heatmap() command provided by stats package [10].
+Haplotype network
+The haplotype() and haploNet() functions implemented in pegas package were used for the construction of the haplotype network [2]. In this section, we wanted to show that data in R can be modified quickly and easily, creating multiple options for analysis. For this reason, we have shown three different haplotype graphs that were represented with different colors as hierarchical using the same data set. Thus, we have created options for those working both in individual datasets and those working with larger populations or groups. While the first haplotype network was represented by individuals, the second haplotype network was represented by populations and the third haplotype network was represented by groups. All haplotype networks were also plotted in different colors.
+The haplotype network represented by individuals has been colored using rainbow colors defined as the default and the names and colors of the samples were described using fill argument in the legend() command, as below.
+plot(net, size = attr(net, "freq"), scale.ratio = 2, cex = 0.6,
+ labels = TRUE, pie = ind.hap, show.mutation = 1, font = 2,
+ fast = TRUE)
+legend(x = 57,y = 15, colnames(ind.hap), fill = rainbow(ncol(ind.hap)),
+  cex = 0.52, ncol = 6, x.intersp = 0.2, text.width = 11)
+We chose special colors for the haplotype network represented by the populations. For the haplotype network, the desired colors were defined as a list in bg argument in the plot() command, as below.
+bg <- c(rep("dodgerblue4", 15), rep("olivedrab4",15),
+  rep("royalblue2", 15), rep("red",15), rep("olivedrab3",15),
+  rep("skyblue1", 15), rep("olivedrab1", 15),
+  rep("darkseagreen1", 15))
+plot(net, size = attr(net, "freq"), bg = bg, scale.ratio = 2, cex = 0.7,
+ labels = TRUE, pie = ind.hap,show.mutation = 1, font = 2, fast = TRUE)
+The names and colors of samples were described as a list in fill argument in the legend() command, as below.
+hapcol <- c("Aksu", "Demre", "Kumluca", "Firm", "Bayatbadem",
+   "Geyikbayir", "Phaselis", "Termessos")
+ubg < -c(rep("dodgerblue4",1), rep("royalblue2",1),
+  rep("skyblue1",1),
+  rep("red",1), rep("olivedrab4",1), rep("olivedrab3",1),
+  rep("olivedrab1",1), rep("darkseagreen1",1))
+legend(x = -35,y = 45, hapcol, fill = ubg, cex = 0.8, ncol = 1, bty = "n",
+ x.intersp = 0.2)
+For the construction of the haplotype network represented by groups, each individual has been renamed with the name of the group to which it belongs. The sample names in the DNAbin object were replaced with the group names to which they belong with a few simple commands, and the haplotype network represented by the groups was plotted. The desired color set for the network diagram was defined in a list for the gbg argument in the plot() command, as below.
+gbg <- c(rep("red"), rep("blue"), rep("green"))
+plot(netg, size = attr(netg, "freq"), bg = gbg, scale.ratio = 2, cex = 0.7,
+ labels = TRUE, pie = ind.hapg, show.mutation = 1, font = 2, fast = TRUE)
+Colors of the groups were defined as a list in fill argument in the legend() command, as below.
+legend(x = -35,y = 45, colnames(ind.hapg), fill = c("red","blue","green"),
+ cex = 0.8, ncol = 1, bty = "n", x.intersp = 0.2)
+Phylogenetic trees
+We demonstrated the circular phylogenetic tree by using ggtree, ggplot2, ape, and stats packages [7, 10, 11]. To construct the phylogenetic tree, the dist.dna() and nj() commands were used supported by stats package. We have shown two circular phylogenetic trees. In the first tree, populations have been colored using the aes(color = Populations) command inherited from ggtree() and were drawn using ggplot2 package, as below.
+emos <- ggtree(tree, layout = ‘circular’,
+  branch.length = ‘branch.length’, lwd = 0.5) +
+ xlim(-0.1, NA)
+ groupOTU(emos, krp, ‘Populations’) +
+ aes(color = Populations) +
+ theme(legend.position = “right”) +
+ geom_tiplab(names(nbin), cex = 1.7, offset = 0.002) +
+ guides(color = guide_legend(override.aes = list(size = 2.5))) +
+ geom_treescale(x = -0.1,color = “coral4”, fontsize = 3, offset = 9)
+In the second tree, the phylogenetic tree was colored according to branch lengths representing genetic distance. The aes(color = branch.length) command was used for coloring branches. Colors were defined using the scale_color_continuous() command. As stated in the commands below, "lightskyblue1" color was used for the longest branch and "coral4" color was used for the shortest branch.
+ggtree(tree,layout = ‘circular’, branch.length = ‘branch.length’,
+aes(color = branch.length), lwd = 0.5) +
+xlim(-0.1, NA) +
+geom_tiplab(names(nbin), size = 1.7, offset = 0.002) +
+scale_color_continuous(high = ‘lightskyblue1’,low = ‘coral4’) +
+geom_treescale(x = -0.1, color = “coral4”, fontsize = 3, offset = 9)
+On the other hand, we have constructed the phylogenetic relationship between haplotypes by using haplotype sequences. In this stage, treeio package (version 1.10.0) [24] was used with ggtree package. We calculated the genetic distance with the dist.hamming() function supported by pegas package [2]. The nj() function was used for neighbor-joining tree estimation. The confidence level between the branches was calculated using 100 bootstrap replicates by the boot.phylo() function implemented in the ape package [20]. The confidence interval was defined according to Kress et al. [25] criteria, as strong for 85% and above, moderate for 70–85%, weak for 50–70%, and poor for 50% and below. We colored node points using the scale_fill_manual() command inherited from the ggtree() command. As stated below, "black", "red", "pink1", and "white" colors were selected according to the suggested four confidence intervals, respectively.
+D <- dist.hamming(mat7)#pegas package
+class(D)
+htre<-nj(D)
+bp <- boot.phylo(htre, mat7, B = 100, function(x) nj(dist.hamming(x)))
+bp2 <- data.frame(node = 1:Nnode(htre) + Ntip(htre), bootstrap = bp)
+htree <- full_join(htre, bp2, by = “node”)
+boothap <- ggtree(htree, size = 1, branch.length = ‘branch.length’) +
+ geom_tiplab(size = 4) +
+ geom_nodepoint(aes(fill = cut(bootstrap,c(0,50,70,85,100)),
+  shape = 21, size = 4) +
+ theme_tree(legend.position = c(0.85, 0.2)) +
+ scale_fill_manual(values = c("black","red","pink1","white",
+   guide = ‘legend’,
+   name = ‘Bootstrap Percentage (BP)’,
+   breaks = c(‘(85,100]’, ‘(70,85]’,
+    ‘(50,70]’, ‘(0,50]’),
+   labels = expression(BP> = 85, 70< = BP*“<85”,
+     50< = BP*“<70”, BP<50))
+
+
+
+The methodology for constructing phylogenetic trees involves several steps and packages in R, as outlined below:
+
+1. **Circular Phylogenetic Trees:**
+   - The `ggtree`, `ggplot2`, `ape`, and `stats` packages are used.
+   - The `dist.dna()` and `nj()` commands from the `stats` package are utilized for tree construction.
+   - Two circular phylogenetic trees are demonstrated:
+     - In the first tree, populations are colored using the `aes(color = Populations)` command inherited from `ggtree()` and drawn using `ggplot2`.
+     - In the second tree, branch lengths representing genetic distance are colored using the `aes(color = branch.length)` command, with colors defined using `scale_color_continuous()`.
+
+2. **Phylogenetic Relationship between Haplotypes:**
+   - The `treeio` package is used in conjunction with `ggtree`.
+   - Genetic distance is calculated with the `dist.hamming()` function from the `pegas` package.
+   - The `nj()` function is employed for neighbor-joining tree estimation.
+   - Confidence levels between branches are calculated using bootstrap replicates with the `boot.phylo()` function from the `ape` package.
+   - Node points are colored using the `scale_fill_manual()` command inherited from `ggtree()`, with colors selected according to suggested confidence intervals.
+
+Here's an example of how the code might look for constructing the phylogenetic relationship between haplotypes:
+
+```R
+# Calculate genetic distance
+D <- dist.hamming(mat7)  # pegas package
+
+# Neighbor-joining tree estimation
+htre <- nj(D)
+
+# Calculate bootstrap replicates
+bp <- boot.phylo(htre, mat7, B = 100, function(x) nj(dist.hamming(x)))
+bp2 <- data.frame(node = 1:Nnode(htre) + Ntip(htre), bootstrap = bp)
+htree <- full_join(htre, bp2, by = "node")
+
+# Plot the tree
+boothap <- ggtree(htree, size = 1, branch.length = 'branch.length') +
+  geom_tiplab(size = 4) +
+  geom_nodepoint(aes(fill = cut(bootstrap, c(0, 50, 70, 85, 100))),
+                 shape = 21, size = 4) +
+  theme_tree(legend.position = c(0.85, 0.2)) +
+  scale_fill_manual(values = c("black", "red", "pink1", "white"),
+                     guide = 'legend',
+                     name = 'Bootstrap Percentage (BP)',
+                     breaks = c('(85,100]', '(70,85]',
+                                '(50,70]', '(0,50]'),
+                     labels = expression(BP > 85, 70 <= BP < 85,
+                                         50 <= BP < 70, BP < 50))
+```
+
+1. **Calculate Genetic Distance:**
+   The `dist.hamming()` function from the `pegas` package is used to calculate the genetic distance between sequences. It computes the pairwise Hamming distance matrix for the corresponding symbols between two strings of equal length.
+
+2. **Neighbor-Joining Tree Estimation:**
+   The `nj()` function is applied to the distance matrix obtained in the previous step to estimate a neighbor-joining phylogenetic tree. This function constructs an unrooted phylogenetic tree based on pairwise genetic distances.
+
+3. **Calculate Bootstrap Replicates:**
+   Bootstrap replicates are calculated using the `boot.phylo()` function from the `ape` package. This function performs bootstrap resampling on the phylogenetic tree to assess the robustness of the tree topology. The `B` parameter specifies the number of bootstrap replicates.
+
+4. **Plot the Tree:**
+   The resulting phylogenetic tree is plotted using the `ggtree()` function from the `ggtree` package. Node points on the tree are colored based on the bootstrap percentage, indicating the level of confidence in each node. The `geom_tiplab()` function adds labels to the tree tips, and `geom_nodepoint()` adds points to the nodes. The `scale_fill_manual()` function customizes the color scale for the bootstrap percentages.
